@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/runforyou-ai/golang-starter/internal/app"
+	"github.com/ryan053857/starter-golang/internal/app"
 )
 
 // workerCmd 仅启动消息 Worker。

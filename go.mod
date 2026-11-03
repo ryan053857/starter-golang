@@ -1,4 +1,4 @@
-module github.com/runforyou-ai/golang-starter
+module github.com/ryan053857/starter-golang
 
 go 1.27.3
 
