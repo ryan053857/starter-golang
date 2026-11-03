@@ -14,8 +14,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 
-	"github.com/runforyou-ai/golang-starter/internal/config"
-	"github.com/runforyou-ai/golang-starter/internal/httpx"
+	"github.com/ryan053857/starter-golang/internal/config"
+	"github.com/ryan053857/starter-golang/internal/httpx"
 )
 
 // Role 是进程启用的能力位。
