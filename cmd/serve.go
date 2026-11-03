@@ -6,10 +6,10 @@ import (
 	"github.com/runforyou-ai/golang-starter/internal/app"
 )
 
-// serveCmd 启动 HTTP 服务。
+// serveCmd 启动全部角色（HTTP、Worker 等）。
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "启动 HTTP 服务",
+	Short: "启动 HTTP、Worker 等全部角色",
 	RunE:  runServe,
 }
 
@@ -18,7 +18,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-// runServe 启动 HTTP 服务直至退出。
+// runServe 以全部角色运行。
 func runServe(cmd *cobra.Command, _ []string) error {
-	return app.Run(cmd.Context(), configFile)
+	return app.Run(cmd.Context(), configFile, app.RoleAll)
 }
