@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/ryan053857/starter-golang/internal/app"
@@ -20,5 +22,8 @@ func init() {
 
 // runServe 以全部角色运行。
 func runServe(cmd *cobra.Command, _ []string) error {
-	return app.Run(cmd.Context(), configFile, app.RoleAll)
+	if err := app.Run(cmd.Context(), configFile, app.RoleAll); err != nil {
+		return fmt.Errorf("serve: %w", err)
+	}
+	return nil
 }

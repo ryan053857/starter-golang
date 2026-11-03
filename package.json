@@ -4,10 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "APP_ENV=dev go run ./cmd serve",
-    "dev:http": "APP_ENV=dev go run ./cmd http",
-    "dev:worker": "APP_ENV=dev go run ./cmd worker",
-    "build": "mkdir -p build && go build -o build/${npm_package_name} ./cmd",
-    "test": "go test ./..."
+    "prepare": "git config core.hooksPath .githooks",
+    "db:name": "echo p$(pwd -P | shasum -a 256 | cut -c1-15)",
+    "db:fresh": "sh -c 'set -e; name=$(bun run --silent db:name); pgx run >/dev/null; force=0; for arg; do case \"$arg\" in --force) force=1;; *) echo \"usage: bun run db:fresh [--force]\" >&2; exit 2;; esac; done; if [ \"$force\" -eq 1 ]; then pgx drop \"$name\" --force; fi; pgx create \"$name\"' --",
+    "dev": "APP_ENV=dev DATABASE_URL=\"$(pgx url \"$(bun run --silent db:name)\")?sslmode=disable\" go run ./cmd serve",
+    "dev:http": "APP_ENV=dev DATABASE_URL=\"$(pgx url \"$(bun run --silent db:name)\")?sslmode=disable\" go run ./cmd http",
+    "dev:worker": "APP_ENV=dev DATABASE_URL=\"$(pgx url \"$(bun run --silent db:name)\")?sslmode=disable\" go run ./cmd worker",
+    "format": "golangci-lint fmt && go fix ./...",
+    "check": "golangci-lint run ./... && go test ./...",
+    "build": "mkdir -p build && go build -o build/${npm_package_name} ./cmd"
   }
 }

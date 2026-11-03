@@ -5,3 +5,6 @@ http:
 
 log:
   level: info
+
+database:
+  url: ""

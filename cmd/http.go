@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/ryan053857/starter-golang/internal/app"
@@ -20,5 +22,8 @@ func init() {
 
 // runHTTP 以 HTTP 角色运行。
 func runHTTP(cmd *cobra.Command, _ []string) error {
-	return app.Run(cmd.Context(), configFile, app.RoleHTTP)
+	if err := app.Run(cmd.Context(), configFile, app.RoleHTTP); err != nil {
+		return fmt.Errorf("http: %w", err)
+	}
+	return nil
 }

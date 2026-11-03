@@ -1,3 +1,4 @@
+// Package main 是应用入口与 cobra 子命令。
 package main
 
 import "os"

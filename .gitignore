@@ -3,7 +3,6 @@
 
 .env
 .env.local
-/config.yaml
 
 .DS_Store
 *.log

@@ -1,0 +1,49 @@
+version: "2"
+
+linters:
+  default: all
+  disable:
+    # 与仓库约定或脚手架模式冲突
+    - gosmopolitan # 本仓库使用中文文案与注释
+    - gochecknoglobals # cobra 命令变量
+    - gochecknoinits # cobra init 注册
+    - exhaustruct # 第三方大结构体无法也不应逐字段填满
+    - exhaustruct_v5
+    - cyclop # 约定允许较长完整函数
+    - funlen
+    - gocognit
+    - gocyclo
+    - nestif
+    - maintidx
+    - lll
+    - wsl # 空白行风格与可读性约定冲突
+    - wsl_v5
+    - nlreturn
+    - varnamelen # 惯用 err/ctx/wg
+    - mnd # 超时等字面量可接受
+    - noinlineerr # 惯用 if err :=
+    - err113 # 允许 fmt.Errorf 构造错误
+    - godox
+    - goheader
+    - arangolint
+    - ginkgolinter
+    - gomodguard
+    - gomodguard_v2
+  settings:
+    depguard:
+      rules:
+        main:
+          allow:
+            - $gostd
+            - github.com/ryan053857/starter-golang
+            - github.com/spf13
+            - github.com/joho
+            - github.com/ThreeDotsLabs
+            - github.com/lib/pq
+            - entgo.io
+            - gopkg.in/yaml.v3
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports

@@ -1,8 +1,10 @@
+// Package httpx 提供 HTTP 服务封装。
 package httpx
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -34,10 +36,10 @@ func NewServer(cfg config.Config, handler http.Handler) *Server {
 }
 
 // Start 在后台监听，并通过通道返回非预期退出错误。
-func (s *Server) Start() <-chan error {
+func (s *Server) Start(ctx context.Context) <-chan error {
 	errCh := make(chan error, 1)
 	go func() {
-		slog.InfoContext(context.Background(), "http listening", "addr", s.httpServer.Addr, "env", s.env)
+		slog.InfoContext(ctx, "http listening", "addr", s.httpServer.Addr, "env", s.env)
 		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -47,16 +49,19 @@ func (s *Server) Start() <-chan error {
 
 // Shutdown 在 shutdownTimeout 内优雅关闭 HTTP；超时则记录警告并强制关闭剩余连接，
 // 仅返回强制关闭本身的错误。
-func (s *Server) Shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+func (s *Server) Shutdown(parent context.Context) error {
+	ctx, cancel := context.WithTimeout(parent, shutdownTimeout)
 	defer cancel()
 	err := s.httpServer.Shutdown(ctx)
 	if err == nil {
 		return nil
 	}
 	if !errors.Is(err, context.DeadlineExceeded) {
-		return err
+		return fmt.Errorf("http shutdown: %w", err)
 	}
 	slog.WarnContext(ctx, "http shutdown timed out, closing remaining connections", "timeout", shutdownTimeout)
-	return s.httpServer.Close()
+	if err := s.httpServer.Close(); err != nil {
+		return fmt.Errorf("http close: %w", err)
+	}
+	return nil
 }

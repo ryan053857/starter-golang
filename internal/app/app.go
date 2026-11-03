@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -11,8 +12,11 @@ import (
 	"sync"
 	"syscall"
 
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
+	_ "github.com/lib/pq" // 注册 database/sql 的 postgres 驱动
 
 	"github.com/ryan053857/starter-golang/internal/config"
 	"github.com/ryan053857/starter-golang/internal/httpx"
@@ -33,16 +37,30 @@ const (
 // App 是已装配的运行实例。
 type App struct {
 	roles  Role
+	db     *entsql.Driver
 	pubSub *gochannel.GoChannel
 	srv    *httpx.Server
 }
 
 // Open 按角色装配实例；调用方负责 Close。
-func Open(_ context.Context, cfg config.Config, roles Role) (*App, error) {
+func Open(ctx context.Context, cfg config.Config, roles Role) (*App, error) {
 	if roles == 0 {
-		return nil, fmt.Errorf("app: no roles")
+		return nil, errors.New("app: no roles")
 	}
-	a := &App{roles: roles}
+	if cfg.DatabaseURL == "" {
+		return nil, errors.New("app: database url is empty")
+	}
+
+	db, err := entsql.Open(dialect.Postgres, cfg.DatabaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("app: open database: %w", err)
+	}
+	if err := db.DB().PingContext(ctx); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("app: ping database: %w", err)
+	}
+
+	a := &App{roles: roles, db: db}
 	if roles&(RoleHTTP|RoleWorker) != 0 {
 		// gochannel 仅进程内有效：发布与订阅必须共用同一实例。
 		a.pubSub = gochannel.NewGoChannel(gochannel.Config{}, watermill.NewSlogLogger(slog.Default()))
@@ -53,16 +71,20 @@ func Open(_ context.Context, cfg config.Config, roles Role) (*App, error) {
 	return a, nil
 }
 
-// Close 依次关闭 HTTP 与 pub/sub，返回第一个错误。
-func (a *App) Close() error {
+// Close 依次关闭 HTTP、pub/sub 与数据库，返回第一个错误。
+func (a *App) Close(ctx context.Context) error {
 	var errs []error
 	if a.srv != nil {
-		errs = append(errs, a.srv.Shutdown())
+		errs = append(errs, a.srv.Shutdown(ctx))
 		a.srv = nil
 	}
 	if a.pubSub != nil {
 		errs = append(errs, a.pubSub.Close())
 		a.pubSub = nil
+	}
+	if a.db != nil {
+		errs = append(errs, a.db.Close())
+		a.db = nil
 	}
 	for _, err := range errs {
 		if err != nil {
@@ -76,7 +98,7 @@ func (a *App) Close() error {
 func Run(ctx context.Context, configFile string, roles Role) error {
 	cfg, err := config.Load(configFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("app: load config: %w", err)
 	}
 	a, err := Open(ctx, cfg, roles)
 	if err != nil {
@@ -96,26 +118,26 @@ func Run(ctx context.Context, configFile string, roles Role) error {
 		case <-ctx.Done():
 			cancel()
 			wait()
-			if closeErr := a.Close(); closeErr != nil {
+			if closeErr := a.Close(ctx); closeErr != nil {
 				return closeErr
 			}
-			return ctx.Err()
+			return fmt.Errorf("app: %w", ctx.Err())
 		case runErr := <-errCh:
 			cancel()
 			wait()
-			_ = a.Close()
+			_ = a.Close(ctx)
 			return runErr
 		case sig := <-sigCh:
 			if sig == syscall.SIGHUP && roles&RoleHTTP != 0 {
 				slog.InfoContext(ctx, "reloading")
 				cancel()
 				wait()
-				if err := a.Close(); err != nil {
+				if err := a.Close(ctx); err != nil {
 					slog.WarnContext(ctx, "close before reload", "error", err)
 				}
 				cfg, err = config.Load(configFile)
 				if err != nil {
-					return err
+					return fmt.Errorf("app: reload config: %w", err)
 				}
 				a, err = Open(ctx, cfg, roles)
 				if err != nil {
@@ -126,7 +148,7 @@ func Run(ctx context.Context, configFile string, roles Role) error {
 			slog.InfoContext(ctx, "shutting down")
 			cancel()
 			wait()
-			return a.Close()
+			return a.Close(ctx)
 		}
 	}
 }
@@ -143,13 +165,11 @@ func (a *App) start(ctx context.Context) (<-chan error, func()) {
 			return errCh, wg.Wait
 		}
 		wg.Go(func() {
-			if err := consumeDemo(ctx, messages); err != nil && ctx.Err() == nil {
-				errCh <- err
-			}
+			consumeDemo(ctx, messages)
 		})
 	}
 	if a.srv != nil {
-		httpErrCh := a.srv.Start()
+		httpErrCh := a.srv.Start(ctx)
 		wg.Go(func() {
 			select {
 			case err, ok := <-httpErrCh:

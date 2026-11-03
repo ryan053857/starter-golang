@@ -2,6 +2,8 @@
 
 ## 通用约定
 
+- 任何场景下，记住是在任何场景下，都只做单一逻辑，不需要考虑任何防御性逻辑，失败就让它失败，越早失败越容易发现错误，解决错误。
+
 - 包、类型、函数写中文直述型注释：直接说明是什么、做什么、返回什么。结构体默认通过类型注释说明字段含义；较长函数可按步骤酌情加点注释。
 
 - 优先保持函数的完整阅读流，单个函数可到 100–200 行；仅在复用或职责显著独立时抽出函数。标准库与依赖直接调用。
@@ -12,19 +14,20 @@
 
 - 数据库统一使用 ent 约定。
 
-- 改完后按改动面自检：Go 执行 `gofmt`、`go fix ./...`；若有 TypeScript，再执行 `bun run format`、`bun run lint` 与 `bun run typecheck`。
-
 - `README.md` 修改和功能增强均需用户明确要求。
 
 - 创建或更新 PR 时，标题与正文须使用中文；为该 PR 提交的 commit message 也使用中文。
 
 ## 本地命令
 
-用根目录 `package.json` 的 bun scripts 作为统一入口（实际仍调用 `go run` / `go build` / `go test`）：
+用根目录 `package.json` 的 bun scripts 作为统一入口：
 
+- `bun run db:fresh`：按当前目录路径哈希创建开发库；库已存在则报错。`bun run db:fresh -- --force` 先删后建
 - `bun run dev`：`serve`（全部角色）
 - `bun run dev:http` / `bun run dev:worker`：仅 HTTP / 仅 Worker
-- `bun run build` / `bun run test`
+- `bun run format`：格式化（`gofumpt` / `goimports`、`go fix`）
+- `bun run check`：`golangci-lint`（`default: all`，过时 API 等）与测试；`git commit` 时由 hook 执行
+- `bun run build`：编译到 `build/`
 
 ## 进程角色
 
@@ -38,9 +41,8 @@
 
 ## 配置加载
 
-优先级：**默认值 < YAML < 环境变量**。
+优先级：默认值 < YAML < 环境变量。
 
-- 配置文件默认 `config.yaml`（可用 `--config` 或 `CONFIG_FILE`）；缺失则跳过。
-- `APP_ENV=dev`（或 YAML `env: dev`）时用 `godotenv.Load` 读取 `.env`，只补全尚未设置的环境变量，不覆盖已有变量。
-- `.env` 不必再写 `APP_ENV`：进入 `.env` 的前提已是 dev（例如 `bun run dev` 已注入）。
-- 示例：`config.example.yaml`、`.env.example`；本地 `config.yaml` / `.env` 不入库。
+- 默认配置为仓库内 `config.yaml`（可用 `--config`）；缺失则失败。
+- `APP_ENV=dev` 时读取 `.env`；缺失则失败。
+- 示例：`.env.example`；本地 `.env` 不入库。

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -14,21 +15,21 @@ const demoTopic = "demo"
 func subscribeDemo(ctx context.Context, pubSub *gochannel.GoChannel) (<-chan *message.Message, error) {
 	messages, err := pubSub.Subscribe(ctx, demoTopic)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("subscribe %s: %w", demoTopic, err)
 	}
 	slog.InfoContext(ctx, "worker subscribed", "topic", demoTopic)
 	return messages, nil
 }
 
 // consumeDemo 消费订阅通道中的消息，直至 ctx 取消或通道关闭。
-func consumeDemo(ctx context.Context, messages <-chan *message.Message) error {
+func consumeDemo(ctx context.Context, messages <-chan *message.Message) {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return
 		case msg, ok := <-messages:
 			if !ok {
-				return nil
+				return
 			}
 			handleDemoMessage(ctx, msg)
 		}
