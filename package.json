@@ -1,0 +1,11 @@
+{
+  "name": "golang-starter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "APP_ENV=dev go run ./cmd serve",
+    "build": "mkdir -p build && go build -o build/${npm_package_name} ./cmd",
+    "test": "go test ./..."
+  }
+}

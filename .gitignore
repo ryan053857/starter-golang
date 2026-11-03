@@ -1,0 +1,10 @@
+/build/
+/node_modules/
+
+.env
+.env.local
+/config.yaml
+
+.DS_Store
+*.log
+.idea/
