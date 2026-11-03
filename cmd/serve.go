@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"changeme/internal/app"
+	"github.com/runforyou-ai/golang-starter/internal/app"
 )
 
 // serveCmd 启动 HTTP 服务。

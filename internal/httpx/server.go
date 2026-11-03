@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"changeme/internal/config"
+	"github.com/runforyou-ai/golang-starter/internal/config"
 )
 
 const shutdownTimeout = 30 * time.Second

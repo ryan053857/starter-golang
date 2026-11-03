@@ -9,8 +9,8 @@ import (
 	"sync"
 	"syscall"
 
-	"changeme/internal/config"
-	"changeme/internal/httpx"
+	"github.com/runforyou-ai/golang-starter/internal/config"
+	"github.com/runforyou-ai/golang-starter/internal/httpx"
 )
 
 // App 是已装配的运行实例。

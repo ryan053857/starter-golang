@@ -1,4 +1,4 @@
-module changeme
+module github.com/runforyou-ai/golang-starter
 
 go 1.27.3
 
