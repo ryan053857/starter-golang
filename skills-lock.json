@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "pgx": {
+      "source": "pgrundev/pgx",
+      "sourceType": "github",
+      "skillPath": "skills/pgx/SKILL.md",
+      "computedHash": "28b6884c88e3b5680fc1e6bbd5e9853ebd6d4cc64779144b26bc237fd9984d54"
+    }
+  }
+}
